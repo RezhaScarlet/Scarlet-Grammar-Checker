@@ -131,6 +131,9 @@ function updateModeUi() {
   elements.correctedText.setAttribute("aria-label", mode.outputAriaLabel);
   elements.correctedText.value = state.output;
   elements.outputSection.hidden = !state.output;
+  if (state.output) {
+    autoResizeOutput();
+  }
   elements.buttonLabel.textContent = mode.buttonLabel;
   updateCharacterCount();
 }
@@ -201,6 +204,7 @@ async function runActiveTool() {
     modeState[requestedMode].output = output.trim();
     elements.correctedText.value = modeState[requestedMode].output;
     elements.outputSection.hidden = false;
+    autoResizeOutput();
     showMessage(mode.successMessage, "success");
   } catch (error) {
     if (error.name === "AbortError") {
@@ -256,6 +260,11 @@ function clearMessage() {
 function updateCharacterCount() {
   const count = elements.inputText.value.length;
   elements.characterCount.textContent = `${count} character${count === 1 ? "" : "s"}`;
+}
+
+function autoResizeOutput() {
+  elements.correctedText.style.height = "auto";
+  elements.correctedText.style.height = `${elements.correctedText.scrollHeight}px`;
 }
 
 async function copyOutputText() {

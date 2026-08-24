@@ -20,10 +20,10 @@
 }
 
 body {
-  width: 390px;
+  width: 360px;
   min-width: 320px;
   max-width: 100vw;
-  min-height: 520px;
+  min-height: 460px;
   margin: 0;
   color: var(--text);
   background:
@@ -173,7 +173,7 @@ label {
 
 textarea {
   width: 100%;
-  min-height: 154px;
+  min-height: 112px;
   padding: 13px 14px;
   resize: vertical;
   border: 1px solid var(--border);
@@ -200,6 +200,9 @@ textarea:focus {
 }
 
 textarea[readonly] {
+  min-height: 48px;
+  overflow: hidden;
+  resize: none;
   background: #10141c;
 }
 
