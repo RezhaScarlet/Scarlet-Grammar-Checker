@@ -5,26 +5,63 @@ const STORAGE_KEYS = {
 
 const REQUEST_TIMEOUT_MS = 30000;
 
+const MODE_CONFIG = {
+  grammar: {
+    inputLabel: "English Text",
+    inputPlaceholder: "Enter English text here...",
+    outputLabel: "Corrected Text",
+    outputAriaLabel: "Corrected text",
+    buttonLabel: "Check Grammar",
+    loadingLabel: "Checking...",
+    emptyInputError: "Please enter English text to check.",
+    successMessage: "Grammar check complete.",
+    missingContentError: "The API response did not include corrected text.",
+    systemPrompt: "You are an English grammar correction assistant. Return only the corrected text without explanation."
+  },
+  translate: {
+    inputLabel: "Indonesian Text",
+    inputPlaceholder: "Masukkan teks Bahasa Indonesia...",
+    outputLabel: "English Translation",
+    outputAriaLabel: "English translation",
+    buttonLabel: "Translate to English",
+    loadingLabel: "Translating...",
+    emptyInputError: "Please enter Indonesian text to translate.",
+    successMessage: "Translation complete.",
+    missingContentError: "The API response did not include translated text.",
+    systemPrompt: "You are a professional Indonesian-to-English translator. Translate the user's Indonesian text into natural, accurate English while preserving its meaning and tone. Return only the English translation without explanation."
+  }
+};
+
 const elements = {
   openSettings: document.querySelector("#open-settings"),
   providerBar: document.querySelector("#provider-bar"),
   providerName: document.querySelector("#provider-name"),
+  modeTabs: Array.from(document.querySelectorAll(".mode-tab")),
+  inputLabel: document.querySelector("#input-label"),
   inputText: document.querySelector("#input-text"),
   characterCount: document.querySelector("#character-count"),
   checkButton: document.querySelector("#check-button"),
   buttonLabel: document.querySelector("#button-label"),
   message: document.querySelector("#message"),
   outputSection: document.querySelector("#output-section"),
+  outputLabel: document.querySelector("#output-label"),
   correctedText: document.querySelector("#corrected-text"),
   copyButton: document.querySelector("#copy-button")
 };
 
+const modeState = {
+  grammar: { input: "", output: "" },
+  translate: { input: "", output: "" }
+};
+
 let activeConfiguration = null;
+let activeMode = "grammar";
 
 initialize();
 
 async function initialize() {
   bindEvents();
+  updateModeUi();
 
   try {
     await loadActiveConfiguration();
@@ -35,9 +72,13 @@ async function initialize() {
 
 function bindEvents() {
   elements.openSettings.addEventListener("click", () => chrome.runtime.openOptionsPage());
-  elements.checkButton.addEventListener("click", checkGrammar);
-  elements.copyButton.addEventListener("click", copyCorrectedText);
-  elements.inputText.addEventListener("input", updateCharacterCount);
+  elements.checkButton.addEventListener("click", runActiveTool);
+  elements.copyButton.addEventListener("click", copyOutputText);
+  elements.inputText.addEventListener("input", handleInput);
+
+  elements.modeTabs.forEach((tab) => {
+    tab.addEventListener("click", () => switchMode(tab.dataset.mode));
+  });
 }
 
 async function loadActiveConfiguration() {
@@ -60,12 +101,54 @@ async function loadActiveConfiguration() {
   }
 }
 
-async function checkGrammar() {
+function switchMode(mode) {
+  if (!MODE_CONFIG[mode] || mode === activeMode || elements.checkButton.disabled) {
+    return;
+  }
+
+  modeState[activeMode].input = elements.inputText.value;
+  modeState[activeMode].output = elements.correctedText.value;
+  activeMode = mode;
+  clearMessage();
+  updateModeUi();
+}
+
+function updateModeUi() {
+  const mode = MODE_CONFIG[activeMode];
+  const state = modeState[activeMode];
+
+  elements.modeTabs.forEach((tab) => {
+    const isActive = tab.dataset.mode === activeMode;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+    tab.tabIndex = isActive ? 0 : -1;
+  });
+
+  elements.inputLabel.textContent = mode.inputLabel;
+  elements.inputText.placeholder = mode.inputPlaceholder;
+  elements.inputText.value = state.input;
+  elements.outputLabel.textContent = mode.outputLabel;
+  elements.correctedText.setAttribute("aria-label", mode.outputAriaLabel);
+  elements.correctedText.value = state.output;
+  elements.outputSection.hidden = !state.output;
+  elements.buttonLabel.textContent = mode.buttonLabel;
+  updateCharacterCount();
+}
+
+function handleInput() {
+  modeState[activeMode].input = elements.inputText.value;
+  updateCharacterCount();
+}
+
+async function runActiveTool() {
   clearMessage();
 
+  const mode = MODE_CONFIG[activeMode];
+  const requestedMode = activeMode;
   const input = elements.inputText.value;
+
   if (!input.trim()) {
-    showMessage("Please enter English text to check.");
+    showMessage(mode.emptyInputError);
     elements.inputText.focus();
     return;
   }
@@ -78,15 +161,14 @@ async function checkGrammar() {
     return;
   }
 
-  setLoading(true);
+  setLoading(true, mode);
   elements.outputSection.hidden = true;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const requestUrl = buildCompletionUrl(activeConfiguration.endpoint);
-    const response = await fetch(requestUrl, {
+    const response = await fetch(getChatCompletionsUrl(activeConfiguration.endpoint), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -97,7 +179,7 @@ async function checkGrammar() {
         messages: [
           {
             role: "system",
-            content: "You are an English grammar correction assistant. Return only the corrected text without explanation."
+            content: mode.systemPrompt
           },
           {
             role: "user",
@@ -111,14 +193,15 @@ async function checkGrammar() {
     });
 
     const { data } = await readOpenAIResponse(response);
-    const correctedText = data?.choices?.[0]?.message?.content;
-    if (typeof correctedText !== "string" || !correctedText.trim()) {
-      throw new UserFacingError("The API response did not include corrected text.");
+    const output = data?.choices?.[0]?.message?.content;
+    if (typeof output !== "string" || !output.trim()) {
+      throw new UserFacingError(mode.missingContentError);
     }
 
-    elements.correctedText.value = correctedText.trim();
+    modeState[requestedMode].output = output.trim();
+    elements.correctedText.value = modeState[requestedMode].output;
     elements.outputSection.hidden = false;
-    showMessage("Grammar check complete.", "success");
+    showMessage(mode.successMessage, "success");
   } catch (error) {
     if (error.name === "AbortError") {
       showMessage("The API request timed out. Please try again.");
@@ -129,7 +212,7 @@ async function checkGrammar() {
     }
   } finally {
     clearTimeout(timeoutId);
-    setLoading(false);
+    setLoading(false, MODE_CONFIG[activeMode]);
   }
 }
 
@@ -148,15 +231,14 @@ function validateConfiguration(configuration) {
   }
 }
 
-function buildCompletionUrl(endpoint) {
-  return getChatCompletionsUrl(endpoint);
-}
-
-function setLoading(isLoading) {
+function setLoading(isLoading, mode) {
   elements.checkButton.disabled = isLoading;
   elements.checkButton.classList.toggle("is-loading", isLoading);
-  elements.buttonLabel.textContent = isLoading ? "Checking..." : "Check Grammar";
+  elements.buttonLabel.textContent = isLoading ? mode.loadingLabel : mode.buttonLabel;
   elements.inputText.disabled = isLoading;
+  elements.modeTabs.forEach((tab) => {
+    tab.disabled = isLoading;
+  });
 }
 
 function showMessage(text, type = "error") {
@@ -176,7 +258,7 @@ function updateCharacterCount() {
   elements.characterCount.textContent = `${count} character${count === 1 ? "" : "s"}`;
 }
 
-async function copyCorrectedText() {
+async function copyOutputText() {
   if (!elements.correctedText.value) {
     return;
   }
@@ -188,7 +270,7 @@ async function copyCorrectedText() {
       elements.copyButton.textContent = "Copy";
     }, 1400);
   } catch (_error) {
-    showMessage("Could not copy the corrected text.");
+    showMessage("Could not copy the output text.");
   }
 }
 
