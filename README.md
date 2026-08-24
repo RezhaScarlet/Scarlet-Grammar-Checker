@@ -243,4 +243,4 @@ Contributions are welcome. Fork the repository, create a focused branch, test th
 
 ## License
 
-No license has been added yet. Add a `LICENSE` file before distributing the project under a specific open-source license.
+This project is available under the [MIT License](LICENSE).
