@@ -35,3 +35,6 @@ coverage/
 # Packaged Chrome extension artifacts
 *.crx
 *.zip
+
+# Local project deployment helper
+push-to-github.bat
