@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grammar Checker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Writing assistant</p>
+        <h1>Grammar Checker</h1>
+      </div>
+      <button id="open-settings" class="icon-button" type="button" aria-label="Open settings" title="Settings">
+        <span aria-hidden="true">⚙</span>
+      </button>
+    </header>
+
+    <section id="provider-bar" class="provider-bar" aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span id="provider-name">No provider configured</span>
+    </section>
+
+    <section class="field-group">
+      <label for="input-text">Input Text</label>
+      <textarea id="input-text" rows="8" placeholder="Enter English text here..." spellcheck="true"></textarea>
+      <div class="input-meta">
+        <span id="character-count">0 characters</span>
+      </div>
+    </section>
+
+    <button id="check-button" class="primary-button" type="button">
+      <span id="button-spinner" class="spinner" aria-hidden="true"></span>
+      <span id="button-label">Check Grammar</span>
+    </button>
+
+    <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+
+    <section id="output-section" class="field-group output-section" hidden>
+      <div class="section-heading">
+        <label for="corrected-text">Corrected Text</label>
+        <button id="copy-button" class="text-button" type="button">Copy</button>
+      </div>
+      <textarea id="corrected-text" rows="8" readonly aria-label="Corrected text"></textarea>
+    </section>
+  </main>
+
+  <script src="http-errors.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

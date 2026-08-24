@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grammar Checker Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <main class="settings-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Grammar Checker</p>
+        <h1>API Configurations</h1>
+        <p class="subtitle">Manage OpenAI-compatible API providers. Your settings are stored locally in Chrome.</p>
+      </div>
+      <button id="add-configuration" class="primary-button" type="button">
+        <span aria-hidden="true">＋</span> Add configuration
+      </button>
+    </header>
+
+    <div id="page-message" class="message" role="status" aria-live="polite" hidden></div>
+
+    <section class="content-grid">
+      <div class="list-panel">
+        <div class="panel-heading">
+          <h2>Saved providers</h2>
+          <span id="configuration-count" class="count-badge">0</span>
+        </div>
+        <div id="configuration-list" class="configuration-list"></div>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon" aria-hidden="true">⚡</div>
+          <h3>No configurations yet</h3>
+          <p>Add an API provider to start checking grammar.</p>
+        </div>
+      </div>
+
+      <section id="form-panel" class="form-panel" hidden>
+        <div class="panel-heading">
+          <div>
+            <p class="form-kicker">Provider details</p>
+            <h2 id="form-title">Add configuration</h2>
+          </div>
+          <button id="close-form" class="icon-button" type="button" aria-label="Close form">×</button>
+        </div>
+
+        <form id="configuration-form" novalidate>
+          <input id="configuration-id" type="hidden">
+
+          <div class="field-group">
+            <label for="configuration-name">Name</label>
+            <input id="configuration-name" type="text" placeholder="Local AI" autocomplete="off" required>
+          </div>
+
+          <div class="field-group">
+            <label for="configuration-endpoint">Endpoint</label>
+            <input id="configuration-endpoint" type="url" placeholder="http://localhost:20128/v1" autocomplete="url" required>
+            <p class="field-hint">Use the API base URL. <code>/chat/completions</code> is added automatically.</p>
+          </div>
+
+          <div class="field-group">
+            <label for="configuration-api-key">API Key</label>
+            <div class="password-field">
+              <input id="configuration-api-key" type="password" placeholder="my-api-key" autocomplete="off" required>
+              <button id="toggle-api-key" class="reveal-button" type="button" aria-label="Show API key">Show</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="configuration-model">Model</label>
+            <input id="configuration-model" type="text" placeholder="gpt-5.6-sol" autocomplete="off" required>
+          </div>
+
+          <div class="connection-check">
+            <div>
+              <strong>Test connection</strong>
+              <p>Verify the endpoint, API key, and model before saving.</p>
+            </div>
+            <button id="check-connection" class="secondary-button check-button" type="button">
+              <span id="check-spinner" class="button-spinner" aria-hidden="true"></span>
+              <span id="check-label">Check</span>
+            </button>
+          </div>
+
+          <div id="check-result" class="check-result" role="status" aria-live="polite" hidden></div>
+          <div id="form-error" class="form-error" role="alert" hidden></div>
+
+          <div class="form-actions">
+            <button id="cancel-form" class="secondary-button" type="button">Cancel</button>
+            <button id="save-configuration" class="primary-button" type="submit" disabled>Save configuration</button>
+          </div>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script src="http-errors.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
