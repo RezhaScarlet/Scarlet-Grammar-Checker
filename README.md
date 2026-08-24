@@ -13,8 +13,6 @@ A lightweight, framework-free Chrome extension for correcting English grammar an
   <img src="image/app-ss.png" alt="Grammar Checker extension popup" width="309">
 </p>
 
-> Add more screenshots to the [`image/`](image/) directory and reference them from this section.
-
 ## Features
 
 - Corrects English grammar while preserving the intended meaning.
